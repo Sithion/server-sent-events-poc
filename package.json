@@ -1,0 +1,36 @@
+{
+  "name": "notification-service-poc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "preclean": "pnpm store prune",
+    "clean": "rimraf \"**/{node_modules,dist,.turbo}\"",
+    "prebuild:packages": "pnpm install",
+    "build:packages": "pnpm build -F './packages/**'",
+    "check-types": "turbo build check-types",
+    "build": "turbo build",
+    "dev": "turbo run dev",
+    "clear:cache": "turbo clear",
+    "format": "pnpm exec biome format --fix **/*.ts",
+    "test": "clear && turbo run test",
+    "test:watch": "clear && turbo run test:watch --filter"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.5.2",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@jest/types": "^29.6.3",
+    "@types/jest": "^29.5.14",
+    "jest": "29.7.0",
+    "jest-junit": "^14.0.0",
+    "jest-mock-extended": "^3.0.7",
+    "jest-node-exports-resolver": "^1.1.6",
+    "rimraf": "3.0.2",
+    "ts-jest": "29.2.5",
+    "turbo": "^2.4.4",
+    "typescript": "5.7.3"
+  }
+}

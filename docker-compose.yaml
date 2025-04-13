@@ -1,0 +1,38 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: 'frontend-service'
+    ports:
+      - 3000:3000
+    stdin_open: true # docker run -i
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE_NAME: backend
+    container_name: 'backend-service'
+    ports:
+      - 3001:3000
+    stdin_open: true # docker run -i
+  microservice:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE_NAME: microservice
+    container_name: 'microservice-service'
+    ports:
+      - 3002:3000
+    stdin_open: true # docker run -i
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # RabbitMQ default port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest

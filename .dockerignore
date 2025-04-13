@@ -1,0 +1,15 @@
+node_modules
+Dockerfile*
+**/Dockerfile
+**/Dockerfile.*
+**/docker-compose*
+**/dist
+**/.turbo
+docker-compose*
+.dockerignore
+.git
+.gitignore
+README.md
+LICENSE
+.vscode
+*.swp

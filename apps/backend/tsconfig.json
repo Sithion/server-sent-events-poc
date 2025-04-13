@@ -1,0 +1,8 @@
+{
+  "extends": "packages.config/typescript.config.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  "include": ["./src"],
+  "exclude": ["node_modules", "dist"]
+}
