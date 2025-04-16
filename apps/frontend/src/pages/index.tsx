@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ServiceBusClient } from '@azure/service-bus';
+import { fetchEventSource, FetchEventSourceInit } from '@microsoft/fetch-event-source';
 
 export const getServerSideProps = async () => {
     return {
@@ -26,32 +27,55 @@ const NotificationStream: React.FC<NotificationStreamProps> = ({ apiUrl, service
     const { type } = router.query;
     useEffect(() => {
         const urlWithQuery = type ? `${apiUrl}?type=${type}` : apiUrl;
-        const eventSource = new EventSource(urlWithQuery);
-        console.log('Event connection opened!');
-        eventSource.onmessage = (event) => {
-            console.log('Event received:', event);
-            const data = JSON.parse(event.data);
-            setMessages((prev) => [...prev, data.message || JSON.stringify(data)]);
+        const controller = new AbortController();
+        controller.signal.addEventListener('abort', () => {
+            console.log('Abort signal received, closing connection');
+        });
+        const signal = controller.signal;
+        const eventSourceConfig: FetchEventSourceInit = {
+            signal,
+            onopen: () => {
+                console.log('Event connection opened!');
+                return Promise.resolve();
+            },
+            onerror: (err) => {
+                console.error('SSE connection error:', err);
+            },
+            onclose: () => {
+                console.log('Event connection closed!');
+                return controller.abort();
+            },
+            onmessage: (event) => {
+                console.log('Event received:', event);
+                if (event.id) {
+                    const data = JSON.parse(event.data);
+                    setMessages((prev) => [...prev, JSON.stringify(data)]);
+                }
+            }
         };
-
-        eventSource.onerror = (err) => {
-            console.error('SSE connection error:', err);
-            eventSource.close();
-        };
-
+        // Storing the API key in the environment 
+        // variable only cause it's a POC project.
+        // In a real project, it should get key using openId API
+        // or any other authentication method.
+        if (process.env?.BACKEND_API_KEY) {
+            eventSourceConfig.headers = {
+                'Authorization': `Bearer ${process.env.BACKEND_API_KEY}`,
+            }
+        }
+        fetchEventSource(urlWithQuery, eventSourceConfig);
         return () => {
-            console.log('Event connection closed!');
-            eventSource.close();
+            controller.abort();
+            console.log('Effect Destroyed, Event connection closed!');
         };
-    }, []);
+    }, [apiUrl, type]);
 
-    const sendMessageToQueue = async () => {
+    const sendMessageToQueue = useCallback(async () => {
         try {
             const serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
             const sender = serviceBusClient.createSender(queueName);
 
             const message = {
-                body: { type: selectedType, message: customMessage || `Message sent at ${new Date().toISOString()}`}
+                body: { type: selectedType, message: customMessage || `Message sent at ${new Date().toISOString()}` }
             };
 
             await sender.sendMessages(message);
@@ -62,7 +86,7 @@ const NotificationStream: React.FC<NotificationStreamProps> = ({ apiUrl, service
         } catch (error) {
             console.error('Error sending message to Azure Service Bus:', error);
         }
-    };
+    }, [serviceBusConnectionString, queueName]);
 
     return (
         <div>

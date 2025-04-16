@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@azure/service-bus": "^7.9.5",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "next": "^13.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
