@@ -1,64 +1,32 @@
-import { Inject, Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { SseGatewayService } from './sse-gateway.service';
-import { ServiceBusAdministrationClient, ServiceBusClient, type ServiceBusReceiver } from '@azure/service-bus';
-import { v4 as uuidv4 } from 'uuid';
-
+import { createClient, type RedisClientType } from 'redis';
 
 @Injectable()
-export class ServiceBusConsumer implements OnModuleInit, OnModuleDestroy {
-  private client: ServiceBusClient;
-  private readonly connectionString: string;
-  private readonly topicName: string;
-  private readonly subscriptionName: string;
+export class ServiceBusConsumer implements OnModuleInit {
+  private redisClient: RedisClientType;
 
   constructor(@Inject(SseGatewayService) private sseGatewayService: SseGatewayService) {
-    if (!process.env.AZURE_SERVICE_BUS_CONNECTION_STRING) {
-      throw new Error('AZURE_SERVICE_BUS_CONNECTION_STRING is not set');
+    const redisUrl = process.env.REDIS_URL;
+    const redisKey = process.env.REDIS_KEY;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL is not set');
     }
-    if (!process.env.AZURE_SERVICE_BUS_TOPIC_NAME) {
-      throw new Error('AZURE_SERVICE_BUS_TOPIC_NAME is not set');
+    if (!redisKey) {
+      throw new Error('REDIS_KEY is not set');
     }
-    if (!process.env.AZURE_SERVICE_BUS_TOPIC_SUBSCRIPTION_NAME_PREFIX) {
-      throw new Error('AZURE_SERVICE_BUS_TOPIC_SUBSCRIPTION_NAME_PREFIX is not set');
-    }
-    this.connectionString = process.env.AZURE_SERVICE_BUS_CONNECTION_STRING;
-    this.topicName = process.env.AZURE_SERVICE_BUS_TOPIC_NAME;
-    this.subscriptionName = `${process.env.AZURE_SERVICE_BUS_TOPIC_SUBSCRIPTION_NAME_PREFIX}-${uuidv4()}`;
-    this.client = new ServiceBusClient(this.connectionString);
-  }
-
-  async createSubscription() {
-    const adminClient = new ServiceBusAdministrationClient(this.connectionString);
-    const exists = await adminClient.subscriptionExists(this.topicName, this.subscriptionName);
-    if (!exists) {
-      await adminClient.createSubscription(this.topicName, this.subscriptionName);
-      console.log(`Subscription '${this.subscriptionName}' created.`);
-    }
-    const deleteSubscription = async () => {
-      await adminClient.deleteSubscription(this.topicName, this.subscriptionName);
-      process.exit(0);
-    };
-    process.on("SIGINT", deleteSubscription);
-    process.on("SIGTERM", deleteSubscription);
+    this.redisClient = createClient({
+      url: `rediss://${redisUrl}:6380`,
+      password: redisKey,
+    });
   }
 
   async onModuleInit() {
-    await this.createSubscription();
-    const topicReceiver = this.client.createReceiver(this.topicName, this.subscriptionName, {
-      receiveMode: "receiveAndDelete"
+    await this.redisClient.connect();
+    console.log('Notification Consumer initialized');
+    this.redisClient.subscribe('notification-topic', (message) => {
+      console.log('Notification received from Redis:', message);
+      this.sseGatewayService.publish(JSON.parse(message));
     });
-    topicReceiver.subscribe({
-      processMessage: async (msg) => {
-        console.log('Notification Received', msg.body);
-        this.sseGatewayService.publish(msg.body);
-      },
-      processError: async (err) => {
-        console.error("Notification Error:", err);
-      },
-    });
-  }
-  async onModuleDestroy() {
-    await this.client.close();
-    console.log('Notification Consumer closed');
   }
 }
