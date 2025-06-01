@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './controllers/app.controller';
-import { SseClientService } from './services/sse-client.service';
+import { ServiceBusConsumer } from './services/service-bus-consumer.service';
 import { SseGatewayService } from './services/sse-gateway.service';
 import { ConfigModule } from '@nestjs/config';
 
@@ -12,6 +12,6 @@ import { ConfigModule } from '@nestjs/config';
     }),
   ],
   controllers: [AppController],
-  providers: [SseClientService, SseGatewayService],
+  providers: [ServiceBusConsumer, SseGatewayService],
 })
 export class AppModule { }

@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ServiceBusClient } from '@azure/service-bus';
-import { fetchEventSource, FetchEventSourceInit } from '@microsoft/fetch-event-source';
+import { fetchEventSource, type FetchEventSourceInit } from '@microsoft/fetch-event-source';
 
 export const getServerSideProps = async () => {
     return {
@@ -113,11 +114,12 @@ const NotificationStream: React.FC<NotificationStreamProps> = ({ apiUrl, service
                     />
                 </label>
                 <br />
-                <button onClick={sendMessageToQueue}>Send Message to Queue</button>
+                <button type="button" onClick={sendMessageToQueue}>Send Message to Queue</button>
             </div>
             <h2>Notifications</h2>
             <ul>
                 {messages.map((msg, idx) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: POC
                     <li key={idx}>{msg}</li>
                 ))}
             </ul>

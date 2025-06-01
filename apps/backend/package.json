@@ -19,6 +19,7 @@
   "dependencies": {
     "@azure/cosmos": "^4.1.0",
     "@azure/msal-node": "^2.12.0",
+    "@azure/service-bus": "^7.9.5",
     "@nestjs/common": "^10.3.9",
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.3.9",
@@ -30,7 +31,8 @@
     "eventsource": "^3.0.6",
     "http-status-codes": "^2.3.0",
     "pino-pretty": "^11.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@automock/adapters.nestjs": "^2.1.0",
@@ -38,11 +40,11 @@
     "@nestjs/schematics": "^10.1.4",
     "@nestjs/testing": "^10.3.9",
     "@playwright/test": "1.40.1",
+    "@types/eventsource": "^3.0.0",
     "@types/express": "^4.17.13",
     "@types/node": "22.5.0",
     "@types/passport-azure-ad": "^4.3.5",
     "@types/supertest": "^2.0.11",
-    "@types/eventsource": "^3.0.0",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.8.0",
     "@typescript-eslint/parser": "^8.8.0",

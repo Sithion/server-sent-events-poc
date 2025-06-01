@@ -1,35 +1,50 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ServiceBusClient } from '@azure/service-bus';
-import { SseGatewayService } from './sse-gateway.service';
+import {
+  Injectable,
+  type OnModuleInit,
+  type OnModuleDestroy
+} from '@nestjs/common';
+import {
+  ServiceBusClient,
+  type ServiceBusSender,
+  type ServiceBusReceiver
+} from '@azure/service-bus';
+
+
 
 @Injectable()
 export class ServiceBusConsumerService implements OnModuleInit, OnModuleDestroy {
   private client!: ServiceBusClient;
+  private queueReceiver: ServiceBusReceiver;
+  private topicSender: ServiceBusSender;
 
-  constructor(private readonly sseGateway: SseGatewayService) { }
-
-  async onModuleInit() {
+  constructor() {
     const connectionString = process.env.AZURE_SERVICE_BUS_CONNECTION_STRING;
     const queueName = process.env.AZURE_SERVICE_BUS_QUEUE_NAME;
-
+    const topicName = process.env.AZURE_SERVICE_BUS_TOPIC_NAME;
     if (!connectionString) {
       throw new Error('AZURE_SERVICE_BUS_CONNECTION_STRING is not set');
     }
     if (!queueName) {
       throw new Error('AZURE_SERVICE_QUEUE_NAME is not set');
     }
+    if (!topicName) {
+      throw new Error('AZURE_SERVICE_BUS_TOPIC_NAME is not set');
+    }
 
     this.client = new ServiceBusClient(connectionString);
-    const receiver = this.client.createReceiver(queueName);
+    this.queueReceiver = this.client.createReceiver(queueName);
+    this.topicSender = this.client.createSender(topicName);
+  }
 
-    receiver.subscribe({
+  async onModuleInit() {
+    this.queueReceiver.subscribe({
       processMessage: async (msg) => {
         console.log('Notification Received', msg.body);
         // ******
         // Store the message in the database or perform any other processing
-        // ******
-        this.sseGateway.publish(msg.body); // Sent to SSE clients
-        await receiver.completeMessage(msg); // Mark the message as complete
+        // ******        
+        await this.queueReceiver.completeMessage(msg); // Mark the message as complete
+        this.topicSender.sendMessages(msg); // Sent to azure service bus topic
       },
       processError: async (err) => {
         console.error('Notification error:', err);

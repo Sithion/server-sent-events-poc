@@ -14,7 +14,10 @@
     "clear:cache": "turbo clear",
     "format": "pnpm exec biome format --fix **/*.ts",
     "test": "clear && turbo run test",
-    "test:watch": "clear && turbo run test:watch --filter"
+    "test:watch": "clear && turbo run test:watch --filter",
+    "microservice": "pnpm -F ./apps/microservice run dev ",
+    "backend": "pnpm -F ./apps/backend run dev",
+    "frontend": "pnpm -F ./apps/frontend run dev "
   },
   "keywords": [],
   "author": "",
